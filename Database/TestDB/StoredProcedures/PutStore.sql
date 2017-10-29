@@ -1,22 +1,22 @@
-﻿CREATE PROCEDURE [dbo].[PutProduct]
-	@ProductId int = NULL OUTPUT,
-	@ProductTypeId INT,
-	@ProductName VARCHAR(1000),
+﻿CREATE PROCEDURE [dbo].[PutStore]
+	@StoreId INT = NULL OUTPUT,
+	@CityId INT,
+	@StoreName VARCHAR(1000),
 	@UserName VARCHAR(50) = NULL
 AS
 /*
-	Description - INSERT\UPDATE  Product
+	Description - INSERT\UPDATE  Store
 	INPUT PARAMETERS:
-	@ProductId - NULL in case of new row insertion.
-	@ProductTypeId
-	@ProductName
+	@StoreId - NULL in case of new row insertion.
+	@CityId
+	@StoreName
 	@UserName - User that responsible for change. If not passed SQL Server will try to identify it.
 				Required because User used for authentification in UI could be different to user used for identification in DB.
 				Well known constraint in case of Client-AppServer-DB architecture
 */
 SET NOCOUNT ON
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
--- Need to lock ProductType for avoid unexpected row delete during product insertion
+-- Need to lock CityId. 
 -- REPEATABLE READ because solution was developed and tested on Azure SQL
 
 BEGIN TRY
@@ -37,32 +37,32 @@ BEGIN TRY
         BEGIN TRANSACTION;  
     -- Modify database.  
 
-	-- 1. Check for Correct Product
-	IF	(	@ProductTypeId is NULL
-			OR NOT EXISTS 		( SELECT 1 FROM dbo.ProductType pt WHERE pt.ProductTypeId = @ProductTypeId		)
+	-- 1. Check for Correct City provided
+	IF	(	@CityId is NULL
+			OR NOT EXISTS 		( SELECT 1 FROM dbo.City c WHERE c.CityId = @CityId		)
 		)
-		RAISERROR('Correct ProductType should be provided as input for product creation.', 16, 1)
+		RAISERROR('Correct City should be provided as input for Store creation.', 16, 1)
 
-	IF Len(ISNULL(@ProductName, '')) = 0
-		RAISERROR('@ProductName could not be empty', 16, 1)
+	IF Len(ISNULL(@StoreName, '')) = 0
+		RAISERROR('@StoreName could not be empty', 16, 1)
 
-	;MERGE dbo.Product as T
+	;MERGE dbo.Store as T
 	USING (VALUES
-				(@ProductId, @ProductTypeId, @ProductName)
-			) as S(ProductId, ProductTypeId, ProductName)
-	ON T.ProductId = S.ProductId
+				(@StoreId, @CityId, @StoreName)
+			) as S(StoreId, CityId, StoreName)
+	ON T.StoreId = S.StoreId
 	WHEN NOT MATCHED THEN
-		INSERT (ProductTypeId, ProductName, UpdatedBy)
-		VALUES (ProductTypeId, ProductName, ISNULL(@UserName, SUSER_SNAME()))
+		INSERT (CityId, StoreName, UpdatedBy)
+		VALUES (CityId, StoreName, ISNULL(@UserName, SUSER_SNAME()))
 	WHEN MATCHED THEN
 		UPDATE SET
-			T.ProductTypeId = S.ProductTypeId
-			, T.ProductName = S.ProductName
+			T.CityId = S.CityId
+			, T.StoreName = S.StoreName
 			, T.UpdatedBy = ISNULL(@UserName, SUSER_SNAME())
 			, T.UpdatedDate = GETUTCDATE()
 	;
 
-	SET @ProductId = SCOPE_IDENTITY()
+	SET @StoreId = SCOPE_IDENTITY()
  
     -- Get here if no errors; must commit  any transaction started in the  
     -- procedure, but not commit a transaction   started before the transaction was called.  

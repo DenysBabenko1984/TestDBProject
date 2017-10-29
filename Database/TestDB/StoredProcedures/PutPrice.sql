@@ -1,18 +1,17 @@
-﻿CREATE PROCEDURE [dbo].[PutProduct]
-	@ProductId int = NULL OUTPUT,
-	@ProductTypeId INT,
-	@ProductName VARCHAR(1000),
-	@UserName VARCHAR(50) = NULL
+﻿CREATE PROCEDURE [dbo].[PutPrice]
+	@PriceTable utPriceTable READONLY -- table type used
+	,@UserName VARCHAR(50)
 AS
 /*
-	Description - INSERT\UPDATE  Product
+	Description - bulk INSERT\UPDATE  prices
 	INPUT PARAMETERS:
-	@ProductId - NULL in case of new row insertion.
-	@ProductTypeId
-	@ProductName
+	@PriceTable - user defined table.
 	@UserName - User that responsible for change. If not passed SQL Server will try to identify it.
 				Required because User used for authentification in UI could be different to user used for identification in DB.
 				Well known constraint in case of Client-AppServer-DB architecture
+	
+	RETURN RESULTSET
+	Table with utPriceTable type structure.
 */
 SET NOCOUNT ON
 SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;  
@@ -37,39 +36,69 @@ BEGIN TRY
         BEGIN TRANSACTION;  
     -- Modify database.  
 
-	-- 1. Check for Correct Product
-	IF	(	@ProductTypeId is NULL
-			OR NOT EXISTS 		( SELECT 1 FROM dbo.ProductType pt WHERE pt.ProductTypeId = @ProductTypeId		)
+	-- 1. Check for Correct input parameters
+	DECLARE @FailedRows VARCHAR(MAX) = ''
+
+	;WITH CTE AS(
+		SELECT	DISTINCT StoreId, ProductId FROM @PriceTable pt
+		EXCEPT
+		(
+			SELECT s.StoreId, p.ProductId
+			FROM dbo.Store s
+			CROSS JOIN dbo.Product p
 		)
-		RAISERROR('Correct ProductType should be provided as input for product creation.', 16, 1)
+	)
+	SELECT	@FailedRows = STRING_AGG((FORMATMESSAGE('( %i . %i )', StoreId, ProductId)), ',')
+	FROM	CTE
 
-	IF Len(ISNULL(@ProductName, '')) = 0
-		RAISERROR('@ProductName could not be empty', 16, 1)
+	IF LEN(@FailedRows) > 0
+		RAISERROR('Next StoreId and ProductId could not be accepted by system. %s', 16, 1, @FailedRows)
+	
+	-- Fail if deleted rows were passed as input
+	If EXISTS (
+				SELECT 1 FROM @PriceTable pt 
+				LEFT OUTER JOIN dbo.Price p  on p.PriceId = pt.PriceId
+				WHERE pt.PriceId IS NOT NULL
+				AND p.PriceId IS NULL
+			)
+		RAISERROR('Deleted rows were passed as input for update.', 16, 1)
 
-	;MERGE dbo.Product as T
-	USING (VALUES
-				(@ProductId, @ProductTypeId, @ProductName)
-			) as S(ProductId, ProductTypeId, ProductName)
-	ON T.ProductId = S.ProductId
-	WHEN NOT MATCHED THEN
-		INSERT (ProductTypeId, ProductName, UpdatedBy)
-		VALUES (ProductTypeId, ProductName, ISNULL(@UserName, SUSER_SNAME()))
-	WHEN MATCHED THEN
+	DECLARE @ActionTable TABLE
+		(
+			RowId INT,
+			PriceId INT
+		)
+
+	;MERGE dbo.Price as T
+	USING @PriceTable as S
+	ON T.PriceId = S.PriceId
+	WHEN Matched THEN
 		UPDATE SET
-			T.ProductTypeId = S.ProductTypeId
-			, T.ProductName = S.ProductName
-			, T.UpdatedBy = ISNULL(@UserName, SUSER_SNAME())
-			, T.UpdatedDate = GETUTCDATE()
+			T.PriceValue = S.PriceValue
+			,T.UpdatedBy = @UserName
+			,T.UpdatedDate = GETUTCDATE()
+	WHEN NOT MATCHED THEN
+		INSERT(StoreId, ProductId, PriceValue, UpdatedBy, UpdatedDate)
+		VALUES(s.StoreId, s.ProductId, s.PriceValue, ISNULL(@UserName, SUSER_SNAME()), GETUTCDATE())
+	OUTPUT s.RowId, INSERTED.PriceId INTO @ActionTable
 	;
 
-	SET @ProductId = SCOPE_IDENTITY()
- 
     -- Get here if no errors; must commit  any transaction started in the  
     -- procedure, but not commit a transaction   started before the transaction was called.  
     IF @TranCounter = 0  
         -- @TranCounter = 0 means no transaction was  started before the procedure was called.  
         -- The procedure must commit the transaction  it started.  
         COMMIT TRANSACTION;  
+
+	SELECT 
+		ISNULL(pt.PriceId, a.PriceId)	as PriceId
+		, pt.RowId
+		, pt.StoreId
+		, pt.ProductId
+		, pt.PriceValue
+	FROM @PriceTable pt
+	INNER JOIN @ActionTable a ON a.RowId = pt.RowId
+
 END TRY
 BEGIN CATCH
     -- An error occurred; must determine   which type of rollback will roll  back only the work done in the  procedure.  

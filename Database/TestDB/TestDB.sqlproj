@@ -63,6 +63,7 @@
     <Folder Include="DDL" />
     <Folder Include="_StaticScripts" />
     <Folder Include="DatabaseTriggers" />
+    <Folder Include="Types" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Tables\ProductType.sql" />
@@ -79,10 +80,24 @@
     <Build Include="StoredProcedures\GetProduct.sql" />
     <Build Include="StoredProcedures\DeleteProduct.sql" />
     <Build Include="Tables\Country.sql" />
+    <Build Include="Tables\City.sql" />
+    <Build Include="StoredProcedures\SearchCity.sql" />
+    <Build Include="Tables\Store.sql" />
+    <Build Include="StoredProcedures\DeleteStore.sql" />
+    <Build Include="StoredProcedures\GetStore.sql" />
+    <Build Include="StoredProcedures\SearchStore.sql" />
+    <Build Include="StoredProcedures\PutStore.sql" />
+    <Build Include="Tables\Price.sql" />
+    <Build Include="StoredProcedures\GetPriceForStore.sql" />
+    <Build Include="Types\utPriceTable.sql" />
+    <Build Include="Types\utMoney.sql" />
+    <Build Include="StoredProcedures\PutPrice.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="_StaticScripts\ProductType.sql" />
     <None Include="_StaticScripts\Country.sql" />
+    <None Include="_StaticScripts\City.sql" />
+    <None Include="TestDB.publish.xml" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="Script.PostDeployment.sql" />

@@ -20,8 +20,6 @@ BEGIN TRY
 	INNER JOIN	dbo.ProductType pt on pt.ProductTypeId = p.ProductTypeId
 	WHERE p.ProductId = @ProductId
 
-	IF @@ROWCOUNT = 0
-		RAISERROR('Product with ProductId = [%i] does not exist and could not be deleted.', 16, 1, @ProductId)
 END TRY
 BEGIN CATCH
 	IF (XACT_STATE() = -1)

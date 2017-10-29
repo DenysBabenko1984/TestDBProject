@@ -1,0 +1,2 @@
+﻿CREATE TYPE [dbo].[utMoney]
+	FROM NUMERIC(19,4) NOT NULL

@@ -4,7 +4,7 @@ USING (VALUES
 			('GE',		'Geormany'),
 			('FR',		'France')
 		) as S(CountryCode, CountryName)
-ON T.CountryCode = S.CountryName
+ON T.CountryCode = S.CountryCode
 WHEN NOT MATCHED THEN
 	INSERT (CountryCode, CountryName)
 	VALUES (CountryCode, CountryName)

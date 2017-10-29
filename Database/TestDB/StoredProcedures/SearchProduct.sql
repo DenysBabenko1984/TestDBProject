@@ -11,7 +11,6 @@ AS
 	@ProductName - Product Name. Mask search supported
 	@UpdatedBy - Search products modified by user
 */
-SET NOCOUNT ON
 BEGIN TRY
 	SELECT 
 		p.ProductId,

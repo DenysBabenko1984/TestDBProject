@@ -1,0 +1,12 @@
+﻿CREATE TABLE [dbo].[Store]
+(
+	[StoreId] INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Store PRIMARY KEY,
+	[CityId] INT NOT NULL CONSTRAINT FK_Store_City_CityId REFERENCES dbo.City(CityId),
+	[StoreName] VARCHAR(1000) NOT NULL,
+    [UpdatedBy] VARCHAR(50) NOT NULL CONSTRAINT DF_Store_UpdatedBy DEFAULT (SUSER_SNAME()), 
+    [UpdatedDate] DATETIME NOT NULL CONSTRAINT DF_Store_UpdatedDate DEFAULT (GETUTCDATE())
+)
+
+GO
+
+CREATE UNIQUE NONCLUSTERED INDEX [IX_Store_CityId_StoreName] ON [dbo].[Store] (CityId, StoreName)

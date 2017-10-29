@@ -12,3 +12,4 @@ Post-Deployment Script Template
 
 :r .\_StaticScripts\ProductType.sql
 :r .\_StaticScripts\Country.sql
+:r .\_StaticScripts\City.sql
