@@ -1,6 +1,6 @@
 ﻿CREATE PROCEDURE [dbo].[PutPrice]
 	@PriceTable utPriceTable READONLY -- table type used
-	,@UserName VARCHAR(50)
+	,@UserName VARCHAR(50) = NULL
 AS
 /*
 	Description - bulk INSERT\UPDATE  prices
