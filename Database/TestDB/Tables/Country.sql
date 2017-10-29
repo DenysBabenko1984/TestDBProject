@@ -1,0 +1,5 @@
+﻿CREATE TABLE [dbo].[Country]
+(
+	CountryCode CHAR(2) NOT NULL CONSTRAINT PK_Country PRIMARY KEY CLUSTERED, -- ISO 3166 Code
+	CountryName VARCHAR(255) NOT NULL
+)
