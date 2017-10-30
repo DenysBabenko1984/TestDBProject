@@ -1,6 +1,6 @@
 ﻿CREATE PROCEDURE [dbo].[PutPrice]
 	@PriceTable utPriceTable READONLY -- table type used
-	,@UserName VARCHAR(50)
+	,@UserName VARCHAR(50) = NULL
 AS
 /*
 	Description - bulk INSERT\UPDATE  prices
@@ -39,7 +39,22 @@ BEGIN TRY
 	-- 1. Check for Correct input parameters
 	DECLARE @FailedRows VARCHAR(MAX) = ''
 
-	;WITH CTE AS(
+	-- It will work only on SQL 2017
+	--;WITH CTE AS(
+	--	SELECT	DISTINCT StoreId, ProductId FROM @PriceTable pt
+	--	EXCEPT
+	--	(
+	--		SELECT s.StoreId, p.ProductId
+	--		FROM dbo.Store s
+	--		CROSS JOIN dbo.Product p
+	--	)
+	--)
+	--SELECT	@FailedRows = STRING_AGG((FORMATMESSAGE('( %i . %i )', StoreId, ProductId)), ',')
+	--FROM	CTE
+	--RAISERROR('Next StoreId and ProductId could not be accepted by system. %s', 16, 1, @FailedRows)
+
+
+	IF EXISTS (
 		SELECT	DISTINCT StoreId, ProductId FROM @PriceTable pt
 		EXCEPT
 		(
@@ -48,11 +63,8 @@ BEGIN TRY
 			CROSS JOIN dbo.Product p
 		)
 	)
-	SELECT	@FailedRows = STRING_AGG((FORMATMESSAGE('( %i . %i )', StoreId, ProductId)), ',')
-	FROM	CTE
+		RAISERROR('Some combination of StoreId and ProductId could not be accepted by system.', 16, 1)
 
-	IF LEN(@FailedRows) > 0
-		RAISERROR('Next StoreId and ProductId could not be accepted by system. %s', 16, 1, @FailedRows)
 	
 	-- Fail if deleted rows were passed as input
 	If EXISTS (
